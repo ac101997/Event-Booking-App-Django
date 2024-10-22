@@ -43,6 +43,7 @@ class Events(models.Model):
 
     def __str__(self):
         return self.event_name
+    
 
 
 class Tickets(models.Model):
@@ -71,4 +72,4 @@ class Booking(models.Model):
     class Meta:
         constraints=[models.UniqueConstraint(fields=['event_booked', 'ticket_booked'], name='unique-booking')]
     def __str__(self):
-            return f"Booking by {self.booked_by} for {self.event_booked}"
+        return f"Booking by {self.booked_by} for {self.event_booked}"
