@@ -14,7 +14,9 @@ from .serializers import *
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated,AllowAny
 from EventBookingApp.permissions import *
+from EventBookingApp.tasks import  *
 
+from django.db.models import Q
 # Create your views here.
 
 class  HomeView(View):
@@ -86,15 +88,6 @@ class EventViewset(viewsets.ModelViewSet):
     #     except Events.DoesNotExist:
     # #         return Response({"error":"Event not found"},status=status.HTTP_404_NOT_FOUND)
 
-    # @action(detail=False,methods=['get'],url_path='by_event/(?P<event_name>[^/.]+)')
-    # def retrieve_by_event(self,request,event_name=None):
-    #     try:
-    #         event=Events.objects.filter(event_name=event_name)
-    #         serializer=self.get_serializer(event,many=True)
-    #         return Response(serializer.data,status=status.HTTP_200_OK)
-    #     except Events.DoesNotExist:
-    #         return Response({"error":"Event not found"},status=status.HTTP_404_NOT_FOUND)
-
 class  TicketsViewset(viewsets.ModelViewSet):
     queryset=Tickets.objects.all()
     serializer_class=TicketSerializer
@@ -106,9 +99,13 @@ class  BookingViewset(viewsets.ModelViewSet):
     permission_classes=[IsVisitor]
 
     def perform_create(self,serializer):
-        print(f"User: {self.request.user}")  # Debugging line
-        user_profile=self.request.user.user_profile
-        serializer.save(booked_by=user_profile)
+        print(f"User: {self.request.user}")  # Debugging line (just to check if code is working or not)
+        user_profile = self.request.user.user_profile
+        #serializer.save(booked_by=user_profile)
+
+        email_send.delay(email=self.request.user.email)
+        # return Response({'message': 'Ticket booked successfully!'}, status=status.HTTP_201_CREATED)
+
 
 class  UserProfileViewset(viewsets.ModelViewSet):
     queryset=UserProfile.objects.all()
@@ -116,3 +113,64 @@ class  UserProfileViewset(viewsets.ModelViewSet):
 
 
 
+# def orm(request):
+#     query=Tickets.objects.select_related('event').all()
+
+#     pre_query=Events.objects.prefetch_related('event_for_ticket').all()
+#     for q in pre_query:
+#         for price in q.event_for_ticket.all():
+#             print(price.price)
+#         #print(q.event_name,[price for q.event_for_ticket.price.all()])
+#     return HttpResponse(pre_query)
+
+
+
+class SearchFeature(APIView):
+    def get(self,request):
+        events=Events.objects.all()
+
+        #get query parameters from request
+        event_name=request.query_params.get('event_name',None)
+        venue=request.query_params.get('venue',None)
+        organizer=request.query_params.get('organizer',None)
+        date=request.query_params.get('date',None)
+
+        #Applying filters based on request params
+
+        # if event_name:
+        #     print("****",event_name)
+        #     events=events.filter(event_name__icontains=event_name)
+
+        # if venue:
+        #     events=events.filter(venue__icontains=venue)
+
+        # if date:
+        #     events=events.filter(date=date)
+
+        # if organizer:
+        #     events=events.filter(organizer__user__username=organizer)
+
+        # events=events.filter(Q(event_name__icontains=event_name) |(Q(venue__icontains=venue) )|
+        #                               Q(date__icontains=date) | Q(organizer__user__username=organizer))
+
+        query=Q()
+        if event_name:
+            query |=Q(event_name__icontains=event_name)
+
+        if venue:
+            query |=Q(venue__icontains=venue)
+
+        if date:
+            query |=Q(date__icontains=date)
+
+        if organizer:
+            query |=Q(organizer__user__username=organizer)
+
+        events=events.filter(query) if query else events
+
+        event_serializer=EventSerializer(events,many=True)
+        return Response(event_serializer.data,status=status.HTTP_200_OK)
+
+        
+
+    

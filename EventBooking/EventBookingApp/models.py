@@ -16,24 +16,6 @@ class UserProfile(models.Model):
         return self.type
 
 
-# class Customer(models.Model):
-#     name=models.CharField(max_length=100)
-#     email=models.EmailField(unique=True,max_length=100)
-#     user_type=models.OneToOneField(UserProfile,on_delete=models.CASCADE,related_name='user_type')
-
-#     def __str__(self):
-#         return self.name
-
-# class Organizer(models.Model):
-#     name=models.CharField(max_length=100)
-#     email=models.EmailField(unique=True,max_length=100)
-#     organizer_profile=models.OneToOneField(UserProfile,on_delete=models.CASCADE,related_name='organizer_profile')
-
-#     #events_organised=Reverse Foreignkey(events)
-
-#     def __str__(self):
-#         return self.name
-    
 
 class Events(models.Model):
     event_name=models.CharField(unique=True, max_length=100)

@@ -22,4 +22,5 @@ urlpatterns = [
     path('registernested/',RegisterViewNested.as_view(),name='register-nested-serializer'),
     path('api/',include(router.urls)),
     path('api_token_auth/',views.obtain_auth_token,name='api_token_auth'),
+    path('api/filter/',SearchFeature.as_view(),name='search-feature'),
 ]
